@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const seasons = require("./seasons");
 const OUT = path.join(__dirname, "snapshots");
+const MAX_ATTEMPTS = 3;
 function option(name) { const i = process.argv.indexOf(name); return i < 0 ? null : process.argv[i + 1]; }
 function choose() {
   const value = option("--only");
@@ -16,7 +17,7 @@ function choose() {
 async function fetchOne(season) {
   const url = `https://yuc.wiki/${season.page}/`;
   let lastError;
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const response = await fetch(url, {
         redirect: "follow",
@@ -40,7 +41,12 @@ async function fetchOne(season) {
       return;
     } catch (error) {
       lastError = error;
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      console.warn(`${season.key}: fetch attempt ${attempt}/${MAX_ATTEMPTS} failed: ${error.message}`);
+      if (attempt < MAX_ATTEMPTS) {
+        const delayMs = 1000 * 2 ** attempt;
+        console.warn(`${season.key}: retrying in ${delayMs / 1000}s`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
   }
   throw new Error(`${season.key} (${url}): ${lastError.message}`);

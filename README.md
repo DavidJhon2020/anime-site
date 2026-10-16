@@ -24,6 +24,7 @@
 ```
 anime-site/
 ├── index.html
+├── .gitattributes            # 统一文本文件为 LF，避免 Windows 换行噪音
 ├── assets/
 │   ├── css/style.css
 │   ├── js/
@@ -68,6 +69,8 @@ npx playwright install chromium
 
 正常更新会按顺序执行：抓取快照 → 解析 → 构建候选数据 → 下载封面 → 更新放送时段 → 生成缩略图 → 校验 → 发布候选数据和 ID 映射。
 
+抓取失败时最多尝试 3 次，每次会打印失败原因，并按 2 秒、4 秒递增等待后重试。
+
 ```bash
 # 更新所有已配置季度
 node tools/update-season.js
@@ -95,7 +98,7 @@ node tools/verify.js --url https://davidjhon2020.github.io/anime-site/
 - 数据与 ID 映射先写入候选文件。候选数据通过静态检查及三种视图 DOM 检查后，才替换 `assets/js/data.js` 和 `tools/id-map.json`；重复执行不会只因日期不同而产生数据变更。
 - 临时解析结果、候选数据与缩略图中间文件由 `.gitignore` 忽略；原始来源快照不会忽略。
 
-当前工作区已保存 `202507`、`202510`、`202601`、`202604`、`202607` 五个来源快照。`202610` 页面在本次维护时返回 TLS 证书时间错误，因此没有伪造或提交该页快照；现有 2026 秋季数据与 ID 映射会保留。离线从 `parse` 阶段重建前，先通过 `node tools/fetch-source.js --only 2026-autumn` 或手动抓取工作流补齐 `yuc202610.html`。
+当前工作区已保存 `202507`、`202510`、`202601`、`202604`、`202607`、`202610` 六个来源快照。`202610` 快照公告并解析出 69 部作品；离线重建 2026 秋季数据时可直接从 `parse` 阶段开始。
 
 ### GitHub Actions
 
