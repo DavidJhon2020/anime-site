@@ -1,0 +1,19 @@
+# 依赖（如本地安装了 playwright / sharp 等开发依赖）
+node_modules/
+
+# 本地 QA / 调试产物
+.edgeprofile/
+.qa*.html
+.qa-*.png
+shot-*.png
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp

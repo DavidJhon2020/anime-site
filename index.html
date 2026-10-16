@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>季刊新番 · 季度日本动画全量档案</title>
   <meta name="description" content="一份按季度发刊的日本电视动画档案：全量收录、官方视觉图、今日/明日放送日程与周放送时刻表。">
+  <link rel="canonical" href="https://davidjhon2020.github.io/anime-site/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="季刊新番">
+  <meta property="og:title" content="季刊新番 · 季度日本动画全量档案">
+  <meta property="og:description" content="2025 夏季至 2026 秋季，六期 393 部日本 TV 动画全量收录，含今日/明日放送日程与周放送时刻表。">
+  <meta property="og:url" content="https://davidjhon2020.github.io/anime-site/">
+  <meta property="og:image" content="https://davidjhon2020.github.io/anime-site/assets/covers/2026-autumn-001.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F4F1EA">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@300;400;500&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
-  <script defer src="assets/js/data.js"></script>
-  <script defer src="assets/js/features.js"></script>
-  <script defer src="assets/js/app.js"></script>
   <script>
     /* 主题：默认纸本（paper），可切夜间（night），记忆于本地 */
     (function () {
@@ -44,9 +50,9 @@
       <div class="mast-tools">
         <div class="search-box">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          <input type="search" id="searchInput" placeholder="搜索作品 / 制作公司" autocomplete="off" aria-label="全站搜索">
+          <input type="search" id="searchInput" placeholder="検索 — 作品 / 制作公司" autocomplete="off" aria-label="全站搜索">
           <kbd>/</kbd>
-          <div class="search-results" id="searchResults" aria-live="polite" hidden></div>
+          <div class="search-results" id="searchResults" hidden></div>
         </div>
         <button class="theme-btn" id="themeBtn" aria-label="切换纸本／夜间版">
           <span class="theme-icon" id="themeIcon">☾</span>
@@ -66,7 +72,7 @@
 
           <div class="cover-story">
             <p class="story-label" id="storyLabel"></p>
-            <a class="story-title" id="storyTitle" href="#panel"></a>
+            <a class="story-title" id="storyTitle" href="#feature"></a>
             <p class="story-jp" id="storyJp"></p>
           </div>
 
@@ -75,7 +81,7 @@
 
         <figure class="plate">
           <div class="plate-frame">
-            <img id="coverImg" alt="" loading="eager" fetchpriority="high" decoding="async">
+            <img id="coverImg" src="" alt="">
           </div>
           <figcaption class="plate-caption">
             <span class="plate-no" id="plateNo">図版 01</span>
@@ -140,9 +146,9 @@
 
       <div class="panel-tools">
         <div class="view-toggle" role="group" aria-label="视图切换">
-          <button class="view-btn active" data-view="timetable" aria-pressed="true">时刻表</button>
-          <button class="view-btn" data-view="gallery" aria-pressed="false">图版</button>
-          <button class="view-btn" data-view="list" aria-pressed="false">索引</button>
+          <button class="view-btn active" data-view="timetable">时刻表</button>
+          <button class="view-btn" data-view="gallery">图版</button>
+          <button class="view-btn" data-view="list">索引</button>
         </div>
         <div class="filters" id="sourceFilters" role="group" aria-label="按原作类型筛选"></div>
         <label class="pick-toggle">
@@ -232,7 +238,7 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <div class="modal-cover">
-        <img id="modalCoverImg" alt="" loading="lazy" decoding="async">
+        <img id="modalCoverImg" src="" alt="" loading="lazy">
       </div>
       <div class="modal-body">
         <p class="modal-kicker" id="modalKicker"></p>
@@ -248,5 +254,8 @@
     </div>
   </div>
 
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/features.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
