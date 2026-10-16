@@ -9,8 +9,8 @@
   var SEASONS = DATA.seasons;
 
   var COLORS = {
-    paper: { 冬: "#4267E8", 春: "#D94D79", 夏: "#168A7B", 秋: "#C85B32" },
-    night: { 冬: "#91A6FF", 春: "#F08BAB", 夏: "#5CCBB4", 秋: "#F0A078" }
+    paper: { 冬: "#3A6EA8", 春: "#C9557E", 夏: "#1E8A7C", 秋: "#B96A22" },
+    night: { 冬: "#7FA8D9", 春: "#E39BB8", 夏: "#55C0B0", 秋: "#E0A05C" }
   };
   var SEASON_FULL = { 冬: "冬季", 春: "春季", 夏: "夏季", 秋: "秋季" };
 
@@ -63,7 +63,6 @@
   ];
 
   var state = { key: null, source: "all", pickOnly: false, view: "timetable" };
-  var modalReturnFocus = null;
   var DOW_NAMES = { 1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日", 0: "其他" };
   var WEEK_CHARS = "日一二三四五六";
   var AIR_WINDOW_DAYS = 91;
@@ -83,6 +82,9 @@
     return SEASONS[SEASONS.length - 1];
   }
   function totalItems() { return SEASONS.reduce(function (n, s) { return n + s.items.length; }, 0); }
+  function totalPicks() {
+    return SEASONS.reduce(function (n, s) { return n + pickCount(s); }, 0);
+  }
   function findItem(id) {
     for (var i = 0; i < SEASONS.length; i++) {
       var hit = SEASONS[i].items.filter(function (it) { return it.id === id; })[0];
@@ -233,7 +235,9 @@
   /* ---------- 封面 ---------- */
   function renderCover() {
     var s = seasonOf(state.key);
-    var f = featuredOf(s);
+    var today = today0();
+    var feat = featureOfToday(s);
+    var f = feat.item;
     var issueNo = SEASONS.indexOf(s) + 1;
 
     $(".cover").style.setProperty("--sc", colorOf(s));
@@ -241,12 +245,12 @@
     $("#coverIssue").textContent =
       "第 " + pad2(issueNo) + " 期 · " + s.year + " " + SEASON_FULL[s.season] + "号 ／ 収録 " + s.items.length + " 部";
 
-    $("#storyLabel").textContent = "本期封面 · ISSUE COVER";
+    $("#storyLabel").textContent = "本日特集 · " + dateCn(today) + " · DAILY FEATURE";
     $("#storyTitle").textContent = f.cn;
     $("#storyJp").textContent = f.jp || f.type;
 
     $("#coverSpecs").innerHTML =
-      specRow("本期推荐", pickCount(s) + " 部") +
+      specRow("推荐作品", totalPicks() + " 部（全库）") +
       specRow("特集更新", "每日轮换") +
       specRow("発行日", DATA.updated);
 
@@ -273,14 +277,20 @@
       '<div class="toc-head"><h2>目次</h2><span>CONTENTS</span></div>' +
       '<div class="toc-list">' +
       items.map(function (it) {
-        return '<a class="toc-item" href="' + it.href + '">' +
+        return '<div class="toc-item" data-href="' + it.href + '">' +
           '<span class="toc-num">' + it.n + "</span>" +
           '<span class="toc-label">' + it.label + "</span>" +
           '<span class="leader"></span>' +
           '<span class="toc-note">' + esc(it.note) + "</span>" +
-          "</a>";
+          "</div>";
       }).join("") +
       "</div>";
+    $all(".toc-item", $("#toc")).forEach(function (el) {
+      el.addEventListener("click", function () {
+        var target = $(el.dataset.href);
+        if (target) window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset - 70, behavior: "smooth" });
+      });
+    });
   }
 
   /* ---------- 01 特集（每日轮换 · 纯文字跨页） ---------- */
@@ -356,10 +366,10 @@
       counts[t] = s.items.filter(function (it) { return it.type === t; }).length;
     });
 
-    var html = '<button class="filter-chip' + (state.source === "all" ? " active" : "") + '" data-src="all" aria-pressed="' + (state.source === "all" ? "true" : "false") + '">全部<sup>' + counts.all + "</sup></button>";
+    var html = '<button class="filter-chip' + (state.source === "all" ? " active" : "") + '" data-src="all">全部<sup>' + counts.all + "</sup></button>";
     TYPES.forEach(function (t) {
       if (!counts[t]) return;
-      html += '<button class="filter-chip' + (state.source === t ? " active" : "") + '" data-src="' + t + '" aria-pressed="' + (state.source === t ? "true" : "false") + '">' + t + "<sup>" + counts[t] + "</sup></button>";
+      html += '<button class="filter-chip' + (state.source === t ? " active" : "") + '" data-src="' + t + '">' + t + "<sup>" + counts[t] + "</sup></button>";
     });
 
     var box = $("#sourceFilters");
@@ -399,7 +409,7 @@
     return (
       '<article class="card" data-id="' + item.id + '" style="--sc:' + color + "; animation-delay:" + Math.min(index * 0.025, 0.6) + 's" tabindex="0" role="button" aria-label="查看《' + esc(item.cn) + '》详情">' +
         '<div class="card-cover">' +
-          '<img src="' + thumbOf(item) + '" alt="' + esc(item.cn) + ' 官方视觉图" loading="lazy" decoding="async">' +
+          '<img src="' + item.cover + '" alt="' + esc(item.cn) + ' 官方视觉图" loading="lazy" decoding="async">' +
           '<span class="card-date">' + esc(item.dateShort) + "</span>" +
           (isPick(item) ? '<span class="card-pick">★</span>' : "") +
         "</div>" +
@@ -627,8 +637,6 @@
   function openModal(id) {
     var found = findItem(id);
     if (!found) return;
-    var activeElement = document.activeElement;
-    modalReturnFocus = activeElement && !activeElement.closest("[hidden]") ? activeElement : $("#searchInput");
     var item = found.item, s = found.season;
 
     var panel = $("#modal");
@@ -666,8 +674,6 @@
   function closeModal() {
     $("#modal").hidden = true;
     document.body.classList.remove("modal-open");
-    if (modalReturnFocus && modalReturnFocus.isConnected && !modalReturnFocus.closest("[hidden]")) modalReturnFocus.focus();
-    modalReturnFocus = null;
   }
 
   /* ---------- 搜索 ---------- */
@@ -688,14 +694,14 @@
       box.innerHTML = hits.map(function (h) {
         var it = h.item;
         return (
-          '<button type="button" class="search-item" data-id="' + it.id + '" data-key="' + h.season.key + '" style="--sc:' + colorOf(h.season) + '">' +
+          '<div class="search-item" data-id="' + it.id + '" data-key="' + h.season.key + '" style="--sc:' + colorOf(h.season) + '">' +
             '<img src="' + thumbOf(it) + '" alt="" loading="lazy">' +
             '<div class="si-body">' +
               '<div class="si-title">' + esc(it.cn) + "</div>" +
               '<div class="si-meta">' + esc(it.jp || it.type) + (it.studio ? " · " + esc(it.studio) : "") + "</div>" +
             "</div>" +
             '<span class="si-season">' + h.season.year + " " + h.season.season + "</span>" +
-          "</button>"
+          "</div>"
         );
       }).join("");
       $all(".search-item", box).forEach(function (el) {
@@ -774,14 +780,6 @@
     });
   }
 
-  function syncViewButtons() {
-    $all(".view-btn").forEach(function (button) {
-      var active = button.dataset.view === state.view;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", active ? "true" : "false");
-    });
-  }
-
   /* ---------- 初始化 ---------- */
   function init() {
     var hash = (location.hash || "").replace("#", "");
@@ -793,7 +791,7 @@
       var t = new URLSearchParams(location.search).get("theme");
       if (t === "paper" || t === "night") document.documentElement.setAttribute("data-theme", t);
     } catch (e) {}
-    syncViewButtons();
+    $all(".view-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.view === state.view); });
 
     initTheme();
     renderIssueNav();
@@ -829,7 +827,7 @@
     /* 视图切换 */
     function setView(v) {
       state.view = v;
-      syncViewButtons();
+      $all(".view-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.view === v); });
       renderContent();
     }
     $all(".view-btn").forEach(function (btn) {
@@ -876,19 +874,6 @@
     document.addEventListener("keydown", function (e) {
       if (!$("#modal").hidden) {
         if (e.key === "Escape") closeModal();
-        if (e.key === "Tab") {
-          var focusables = $all("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])", $("#modal"));
-          if (focusables.length) {
-            var activeIndex = focusables.indexOf(document.activeElement);
-            if (e.shiftKey && activeIndex <= 0) {
-              e.preventDefault();
-              focusables[focusables.length - 1].focus();
-            } else if (!e.shiftKey && (activeIndex === focusables.length - 1 || activeIndex === -1)) {
-              e.preventDefault();
-              focusables[0].focus();
-            }
-          }
-        }
         return;
       }
       var tag = (document.activeElement && document.activeElement.tagName) || "";
