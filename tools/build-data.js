@@ -1,81 +1,62 @@
-/* 由 parsed.json 生成最终 data.js */
+/* Build a candidate data.js from parser output without touching the published file. */
 const fs = require("fs");
-const DIR = __dirname;
-const data = require("./parsed.json");
-
-const SEASON_META = {
-  "2025-summer": { year: 2025, season: "夏", tagline: "续作霸权与新作黑马扎堆的一个夏天——从灵异青春到科幻求生，密度极高。" },
-  "2025-autumn": { year: 2025, season: "秋", tagline: "霸权续作集结的秋天——一拳超人、间谍过家家与我的英雄学院同台竞演。" },
-  "2026-winter": { year: 2026, season: "冬", tagline: "开年即王炸——咒术回战、葬送的芙莉莲与我推的孩子三巨头同季回归。" },
-  "2026-spring": { year: 2026, season: "春", tagline: "恋爱时代与神仙续作——从荒川弘新作到 Re:0 第四季，密度罕见。" },
-  "2026-summer": { year: 2026, season: "夏", tagline: "BLEACH 终章、攻壳重启与无职转生——夏天的重量级阵容。" },
-  "2026-autumn": { year: 2026, season: "秋", current: true, tagline: "药屋、黑五与边缘行者 2 领衔——2026 年最后的盛宴，续作浓度全年最高。" }
-};
-
-const PICKS = {
-  "2025-summer": ["胆大党", "废渊战鬼", "光死去的夏天"],
-  "2025-autumn": ["一拳超人", "间谍过家家", "我的英雄学院"],
-  "2026-winter": ["咒术回战", "葬送的芙莉莲"],
-  "2026-spring": ["黄泉的使者", "异兽魔都", "春夏秋冬"],
-  "2026-summer": ["BLEACH", "攻壳"],
-  "2026-autumn": ["药屋", "黑色五叶草", "冰之城墙", "FX战士"]
-};
-
-function normType(t) {
-  if (!t) return "其他";
-  if (t.includes("漫画") || t.includes("韩漫")) return "漫画";
-  if (t.includes("小说")) return "小说";
-  if (t.includes("原创")) return "原创";
-  if (t.includes("游戏")) return "游戏";
+const path = require("path");
+const vm = require("vm");
+const ROOT = path.resolve(__dirname, "..");
+const seasonsConfig = require("./seasons");
+function option(name, fallback) { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; }
+function readData(file) { const ctx = { window: {} }; vm.runInNewContext(fs.readFileSync(file, "utf8"), ctx); return ctx.window.SEASONAL_DATA; }
+function dateInfo(value) {
+  let match = (value || "").match(/(\d{1,2})\/(\d{1,2})/);
+  if (match) return { short: `${match[1]}/${match[2]}`, sort: Number(match[1]) * 100 + Number(match[2]) };
+  match = (value || "").match(/(\d{1,2})月/);
+  return match ? { short: `${match[1]}月`, sort: Number(match[1]) * 100 + 99 } : { short: value || "待定", sort: 99999 };
+}
+function normType(value) {
+  if (!value) return "其他";
+  if (/漫画|韩漫/.test(value)) return "漫画";
+  if (/小说/.test(value)) return "小说";
+  if (/原创/.test(value)) return "原创";
+  if (/游戏/.test(value)) return "游戏";
   return "其他";
 }
-
-function dateInfo(b) {
-  let m = (b || "").match(/(\d{1,2})\/(\d{1,2})/);
-  if (m) return { short: m[1] + "/" + m[2], sort: parseInt(m[1], 10) * 100 + parseInt(m[2], 10) };
-  m = (b || "").match(/(\d{1,2})月/);
-  if (m) return { short: m[1] + "月", sort: parseInt(m[1], 10) * 100 + 99 };
-  return { short: b || "待定", sort: 99999 };
-}
-
-const order = ["2025-summer", "2025-autumn", "2026-winter", "2026-spring", "2026-summer", "2026-autumn"];
-const seasons = order.map((key) => {
-  const meta = SEASON_META[key];
-  const items = data
-    .filter((e) => e.season === key)
-    .map((e) => {
-      const d = dateInfo(e.broadcast);
+function main() {
+  const parsed = JSON.parse(fs.readFileSync(path.join(__dirname, "parsed.json"), "utf8"));
+  const out = option("--out", path.join(ROOT, ".tmp", "data.candidate.js"));
+  const onlyArg = option("--only", (parsed.selected || []).join(","));
+  const selected = new Set(onlyArg.split(",").filter(Boolean));
+  const livePath = path.join(ROOT, "assets/js/data.js");
+  const live = readData(livePath);
+  const parsedSeasons = parsed.seasons || {};
+  const seasons = seasonsConfig.map((config) => {
+    if (!selected.has(config.key)) {
+      const previous = live.seasons.find((entry) => entry.key === config.key);
+      if (!previous) throw new Error(`No existing data for ${config.key}; include it in parsed.json`);
+      return previous;
+    }
+    const source = parsedSeasons[config.key];
+    if (!source || !Array.isArray(source.items)) throw new Error(`Missing parsed season ${config.key}`);
+    const items = source.items.map((entry) => {
+      const date = dateInfo(entry.broadcast);
       return {
-        id: e.id,
-        cn: e.cn,
-        jp: e.jp || "",
-        type: normType(e.type),
-        tags: e.tags.slice(0, 4),
-        studio: e.studio || "",
-        author: e.author || "",
-        dateShort: d.short,
-        broadcast: e.broadcast || "",
-        sort: d.sort,
-        cover: "assets/covers/" + e.id + ".jpg",
-        pick: PICKS[key].some((p) => e.cn.includes(p) || (e.jp || "").includes(p))
+        id: entry.id, cn: entry.cn, jp: entry.jp || "", type: normType(entry.type),
+        tags: (entry.tags || []).slice(0, 4), studio: entry.studio || "", author: entry.author || "",
+        dateShort: date.short, broadcast: entry.broadcast || "", sort: date.sort,
+        cover: `assets/covers/${entry.id}.jpg`,
+        pick: config.picks.some((word) => entry.cn.includes(word) || (entry.jp || "").includes(word))
       };
-    })
-    .sort((a, b) => a.sort - b.sort);
-  return Object.assign({ key }, meta, { items });
-});
-
-let total = 0, picks = 0;
-seasons.forEach((s) => { total += s.items.length; picks += s.items.filter((i) => i.pick).length; });
-console.log("seasons:", seasons.length, "total:", total, "picks:", picks);
-
-const js =
-  "/**\n" +
-  " * 新番导览 · 数据文件（全量版）\n" +
-  " * 收录 2025 夏季 – 2026 秋季共 6 个季度的日本 TV 动画，每季全量片单。\n" +
-  " * 数据整理自 長門番堂 季度新番一览（yuc.wiki）；封面为各作品官方视觉图。\n" +
-  " * 最近更新：" + "2026-10-15\n" +
-  " */\n" +
-  "window.SEASONAL_DATA = " + JSON.stringify({ updated: "2026-10-15", seasons }, null, 1) + ";\n";
-
-fs.writeFileSync(require("path").join(__dirname, "..", "assets", "js", "data.js"), js);
-console.log("data.js written,", js.length, "bytes");
+    }).sort((a, b) => a.sort - b.sort);
+    return { key: config.key, year: config.year, season: config.season, ...(config.current ? { current: true } : {}), tagline: config.tagline, items };
+  });
+  if (new Set(seasons.map((season) => season.key)).size !== seasonsConfig.length) throw new Error("Season configuration contains duplicate keys");
+  const data = { updated: new Date().toISOString().slice(0, 10), seasons };
+  const count = seasons.reduce((n, season) => n + season.items.length, 0);
+  const picks = seasons.reduce((n, season) => n + season.items.filter((item) => item.pick).length, 0);
+  const first = seasons[0], last = seasons[seasons.length - 1];
+  const period = `${first.year} ${first.season}季 – ${last.year} ${last.season}季`;
+  const js = `/**\n * 季刊新番 · 数据文件（全量版）\n * 收录 ${period} 共 ${seasons.length} 个季度的日本 TV 动画，共 ${count} 部。\n * 数据整理自 長門番堂 季度新番一览（yuc.wiki）；封面为各作品官方视觉图。\n * 最近更新：${data.updated}\n */\nwindow.SEASONAL_DATA = ${JSON.stringify(data, null, 1)};\n`;
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, js);
+  console.log(`candidate written: ${path.relative(ROOT, out)} | ${seasons.length} seasons, ${count} entries, ${picks} picks`);
+}
+try { main(); } catch (error) { console.error(`build-data failed: ${error.message}`); process.exitCode = 1; }

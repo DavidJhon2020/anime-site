@@ -6,7 +6,10 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "assets", "covers");
-const data = require("./parsed.json");
+const parsed = JSON.parse(fs.readFileSync(path.join(__dirname, "parsed.json"), "utf8"));
+const selectedArg = process.argv.indexOf("--only");
+const selected = selectedArg >= 0 ? new Set(process.argv[selectedArg + 1].split(",")) : null;
+const data = Object.values(parsed.seasons || {}).flatMap((season) => season.items).filter((entry) => !selected || selected.has(entry.season));
 
 if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 
@@ -36,7 +39,9 @@ async function downloadOne(entry, tries = 3) {
     try {
       const buf = await get(url);
       if (buf.length < 5000 || buf[0] !== 0xff || buf[1] !== 0xd8) throw new Error("bad image " + buf.length);
-      fs.writeFileSync(file, buf);
+      const tmp = file + ".tmp";
+      fs.writeFileSync(tmp, buf);
+      fs.renameSync(tmp, file);
       return "ok";
     } catch (e) {
       if (t === tries) return "fail: " + e.message;
@@ -61,5 +66,5 @@ async function downloadOne(entry, tries = 3) {
   }
   await Promise.all(Array.from({ length: conc }, worker));
   console.log("DONE ok=" + ok, "cached=" + cached, "fail=" + fail);
-  if (fails.length) console.log(fails.join("\n"));
+  if (fails.length) { console.error(fails.join("\n")); process.exitCode = 1; }
 })();

@@ -1,0 +1,13 @@
+{
+  "name": "seasonal-anime-quarterly-tools",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "verify": "node tools/verify.js",
+    "update-season": "node tools/update-season.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "sharp": "0.35.5"
+  }
+}

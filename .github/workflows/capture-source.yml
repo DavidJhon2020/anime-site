@@ -1,0 +1,37 @@
+name: Capture source snapshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "Season keys or source page IDs, comma-separated; leave blank for all configured seasons"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch source pages with normal TLS validation
+        shell: bash
+        env:
+          SEASONS: ${{ inputs.seasons }}
+        run: |
+          if [ -n "$SEASONS" ]; then
+            node tools/fetch-source.js --only "$SEASONS"
+          else
+            node tools/fetch-source.js
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yuc-source-snapshots-${{ github.run_number }}
+          path: tools/snapshots/yuc*.html
+          if-no-files-found: error
+          retention-days: 30

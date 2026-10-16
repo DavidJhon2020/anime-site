@@ -1,5 +1,11 @@
 # 依赖（如本地安装了 playwright / sharp 等开发依赖）
 node_modules/
+.tmp/
+tools/parsed.json
+tools/id-map.candidate.json
+tools/snapshots/*.tmp
+assets/covers/*.tmp
+assets/thumbs/*.tmp
 
 # 本地 QA / 调试产物
 .edgeprofile/

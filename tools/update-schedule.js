@@ -1,7 +1,10 @@
 /* 为 data.js 增加放送周期字段：dow（1=周一…7=周日，0=其他/网络）、slot（时段序号，-1=未标注） */
 const fs = require("fs");
 const path = require("path");
-const DATA_PATH = path.join(__dirname, "..", "assets", "js", "data.js");
+const DATA_PATH = (() => {
+  var i = process.argv.indexOf("--file");
+  return path.resolve(i >= 0 ? process.argv[i + 1] : path.join(__dirname, "..", "assets", "js", "data.js"));
+})();
 
 global.window = {};
 require(DATA_PATH);
@@ -48,13 +51,16 @@ Object.keys(stats).forEach(function (k) { cols[k.split("/")[0]] = (cols[k.split(
 console.log("列分布(周一~周日,0=其他):", JSON.stringify(cols));
 console.log("无时段标注:", Object.keys(stats).filter(function (k) { return k.endsWith("/-1"); }).reduce(function (n, k) { return n + stats[k]; }, 0));
 
+var labels = { "2025-summer": "2025 夏季", "2025-autumn": "2025 秋季", "2026-winter": "2026 冬季", "2026-spring": "2026 春季", "2026-summer": "2026 夏季", "2026-autumn": "2026 秋季" };
+var first = data.seasons[0], last = data.seasons[data.seasons.length - 1];
+var range = first && last ? (labels[first.key] || (first.year + " " + first.season + "季")) + " – " + (labels[last.key] || (last.year + " " + last.season + "季")) : "季度片单";
 var js =
   "/**\n" +
-  " * 新番导览 · 数据文件（全量版）\n" +
-  " * 收录 2025 夏季 – 2026 秋季共 6 个季度的日本 TV 动画，每季全量片单。\n" +
+  " * 季刊新番 · 数据文件（全量版）\n" +
+  " * 收录 " + range + " 共 " + data.seasons.length + " 个季度的日本 TV 动画，每季全量片单。\n" +
   " * 数据整理自 長門番堂 季度新番一览（yuc.wiki）；封面为各作品官方视觉图。\n" +
   " * 字段：dow=放送星期（1周一…7周日，0其他/网络），slot=时段序号（0凌晨…11深夜，-1未标注）\n" +
-  " * 最近更新：2026-10-15\n" +
+  " * 最近更新：" + data.updated + "\n" +
   " */\n" +
   "window.SEASONAL_DATA = " + JSON.stringify(data, null, 1) + ";\n";
 
