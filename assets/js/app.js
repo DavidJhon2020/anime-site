@@ -399,7 +399,7 @@
     return (
       '<article class="card" data-id="' + item.id + '" style="--sc:' + color + "; animation-delay:" + Math.min(index * 0.025, 0.6) + 's" tabindex="0" role="button" aria-label="查看《' + esc(item.cn) + '》详情">' +
         '<div class="card-cover">' +
-          '<img src="' + item.cover + '" alt="' + esc(item.cn) + ' 官方视觉图" loading="lazy" decoding="async">' +
+          '<img src="' + thumbOf(item) + '" alt="' + esc(item.cn) + ' 官方视觉图" loading="lazy" decoding="async">' +
           '<span class="card-date">' + esc(item.dateShort) + "</span>" +
           (isPick(item) ? '<span class="card-pick">★</span>' : "") +
         "</div>" +

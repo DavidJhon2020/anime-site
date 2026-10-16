@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@300;400;500&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/features.js"></script>
+  <script defer src="assets/js/app.js"></script>
   <script>
     /* 主题：默认纸本（paper），可切夜间（night），记忆于本地 */
     (function () {
@@ -72,7 +75,7 @@
 
         <figure class="plate">
           <div class="plate-frame">
-            <img id="coverImg" src="" alt="">
+            <img id="coverImg" alt="" loading="eager" fetchpriority="high" decoding="async">
           </div>
           <figcaption class="plate-caption">
             <span class="plate-no" id="plateNo">図版 01</span>
@@ -229,7 +232,7 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <div class="modal-cover">
-        <img id="modalCoverImg" src="" alt="" loading="lazy">
+        <img id="modalCoverImg" alt="" loading="lazy" decoding="async">
       </div>
       <div class="modal-body">
         <p class="modal-kicker" id="modalKicker"></p>
@@ -245,8 +248,5 @@
     </div>
   </div>
 
-  <script src="assets/js/data.js"></script>
-  <script src="assets/js/features.js"></script>
-  <script src="assets/js/app.js"></script>
 </body>
 </html>
